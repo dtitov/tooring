@@ -13,7 +13,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.StringUtils;
 
 /**
- * Unit tests
+ * Unit tests.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = TooringApplication.class)
@@ -23,6 +23,11 @@ public class TooringApplicationTests {
 
     private Gson gson = new Gson();
 
+    /**
+     * Validates Turing machine serialization to JSON.
+     *
+     * @throws Exception
+     */
     @Test
     public void testSerialization() throws Exception {
         TuringMachine defaultTuringMachine = new DefaultTuringMachine();
@@ -67,6 +72,11 @@ public class TooringApplicationTests {
         Assert.assertFalse(StringUtils.isEmpty(json));
     }
 
+    /**
+     * Validates Turing machine deserialization from JSON.
+     *
+     * @throws Exception
+     */
     @Test
     public void testDeserialization() throws Exception {
         String json = "{\"stateSpace\":[\"q1\",\"qa\",\"q2\",\"qr\",\"q3\",\"q4\",\"q5\",\"q6\",\"q7\",\"q8\"],\"transitionSpace\":[{\"readState\":\"q1\",\"readSymbol\":\"1\",\"writeState\":\"q3\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q6\",\"readSymbol\":\"#\",\"writeState\":\"q7\",\"writeSymbol\":\"#\",\"moveDirection\":false},{\"readState\":\"q6\",\"readSymbol\":\"x\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q4\",\"readSymbol\":\"x\",\"writeState\":\"q4\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q4\",\"readSymbol\":\"0\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q5\",\"readSymbol\":\"1\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"#\",\"writeState\":\"q4\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q5\",\"readSymbol\":\"x\",\"writeState\":\"q5\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q1\",\"readSymbol\":\"0\",\"writeState\":\"q2\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q6\",\"readSymbol\":\"0\",\"writeState\":\"q6\",\"writeSymbol\":\"0\",\"moveDirection\":false},{\"readState\":\"q6\",\"readSymbol\":\"1\",\"writeState\":\"q6\",\"writeSymbol\":\"1\",\"moveDirection\":false},{\"readState\":\"q7\",\"readSymbol\":\"1\",\"writeState\":\"q7\",\"writeSymbol\":\"1\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"0\",\"writeState\":\"q2\",\"writeSymbol\":\"0\",\"moveDirection\":true},{\"readState\":\"q7\",\"readSymbol\":\"x\",\"writeState\":\"q1\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"0\",\"writeState\":\"q3\",\"writeSymbol\":\"0\",\"moveDirection\":true},{\"readState\":\"q8\",\"readSymbol\":\"_\",\"writeState\":\"qa\",\"writeSymbol\":\"_\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"#\",\"writeState\":\"q5\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q8\",\"readSymbol\":\"x\",\"writeState\":\"q8\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"1\",\"writeState\":\"q3\",\"writeSymbol\":\"1\",\"moveDirection\":true},{\"readState\":\"q1\",\"readSymbol\":\"#\",\"writeState\":\"q8\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q7\",\"readSymbol\":\"0\",\"writeState\":\"q7\",\"writeSymbol\":\"0\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"1\",\"writeState\":\"q2\",\"writeSymbol\":\"1\",\"moveDirection\":true}],\"startState\":\"q1\",\"acceptState\":\"qa\",\"rejectState\":\"qr\",\"tape\":\"\",\"done\":false}";
@@ -74,6 +84,11 @@ public class TooringApplicationTests {
         Assert.assertNotNull(defaultTuringMachine);
     }
 
+    /**
+     * Validates correct execution of sample algorithm.
+     *
+     * @throws Exception
+     */
     @Test
     public void testTuringMachine() throws Exception {
         String json = "{\"stateSpace\":[\"q1\",\"qa\",\"q2\",\"qr\",\"q3\",\"q4\",\"q5\",\"q6\",\"q7\",\"q8\"],\"transitionSpace\":[{\"readState\":\"q1\",\"readSymbol\":\"1\",\"writeState\":\"q3\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q6\",\"readSymbol\":\"#\",\"writeState\":\"q7\",\"writeSymbol\":\"#\",\"moveDirection\":false},{\"readState\":\"q6\",\"readSymbol\":\"x\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q4\",\"readSymbol\":\"x\",\"writeState\":\"q4\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q4\",\"readSymbol\":\"0\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q5\",\"readSymbol\":\"1\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"#\",\"writeState\":\"q4\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q5\",\"readSymbol\":\"x\",\"writeState\":\"q5\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q1\",\"readSymbol\":\"0\",\"writeState\":\"q2\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q6\",\"readSymbol\":\"0\",\"writeState\":\"q6\",\"writeSymbol\":\"0\",\"moveDirection\":false},{\"readState\":\"q6\",\"readSymbol\":\"1\",\"writeState\":\"q6\",\"writeSymbol\":\"1\",\"moveDirection\":false},{\"readState\":\"q7\",\"readSymbol\":\"1\",\"writeState\":\"q7\",\"writeSymbol\":\"1\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"0\",\"writeState\":\"q2\",\"writeSymbol\":\"0\",\"moveDirection\":true},{\"readState\":\"q7\",\"readSymbol\":\"x\",\"writeState\":\"q1\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"0\",\"writeState\":\"q3\",\"writeSymbol\":\"0\",\"moveDirection\":true},{\"readState\":\"q8\",\"readSymbol\":\"_\",\"writeState\":\"qa\",\"writeSymbol\":\"_\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"#\",\"writeState\":\"q5\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q8\",\"readSymbol\":\"x\",\"writeState\":\"q8\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"1\",\"writeState\":\"q3\",\"writeSymbol\":\"1\",\"moveDirection\":true},{\"readState\":\"q1\",\"readSymbol\":\"#\",\"writeState\":\"q8\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q7\",\"readSymbol\":\"0\",\"writeState\":\"q7\",\"writeSymbol\":\"0\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"1\",\"writeState\":\"q2\",\"writeSymbol\":\"1\",\"moveDirection\":true}],\"startState\":\"q1\",\"acceptState\":\"qa\",\"rejectState\":\"qr\",\"tape\":\"010000110101#010000110101\",\"done\":false}";
