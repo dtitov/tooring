@@ -1,9 +1,11 @@
 package com.uwc.tooring.model;
 
+import java.io.Serializable;
+
 /**
  * Class represents transition of Turing machine.
  */
-public class Transition {
+public class Transition implements Serializable {
 
     private final String readState;
     private final char readSymbol;

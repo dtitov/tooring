@@ -23,6 +23,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     private String acceptState = "";
     private String rejectState = "";
     private String tape = "";
+    private boolean scheduled = false;
+    private boolean running = false;
     private boolean done = false;
 
     /**
@@ -30,6 +32,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      */
     @Override
     public void run(boolean quite) {
+        running = true;
+
         String currentState = startState;
         int currentSymbol = 0;
 
@@ -78,7 +82,9 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
             }
         }
 
-        done = currentState.equals(acceptState);
+        scheduled = false;
+        running = false;
+        done = true;
     }
 
     /**
@@ -172,7 +178,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     /**
      * Sets state space of the machine.
      *
-     * @param stateSpace
+     * @param stateSpace State space
      */
     public void setStateSpace(Set<String> stateSpace) {
         this.stateSpace = stateSpace;
@@ -242,6 +248,31 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     }
 
     /**
+     * Schedules machine for execution.
+     */
+    public void schedule() {
+        this.scheduled = true;
+    }
+
+    /**
+     * Checks if machine is scheduled for execution.
+     *
+     * @return true if machine is scheduled for execution, false otherwise
+     */
+    public boolean isScheduled() {
+        return scheduled;
+    }
+
+    /**
+     * Checks if computations are in progress.
+     *
+     * @return true if tape computation is in progress, false otherwise
+     */
+    public boolean isRunning() {
+        return running;
+    }
+
+    /**
      * Checks if computations are finished.
      *
      * @return true if tape computation is completed, false otherwise
@@ -262,6 +293,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
                 ", acceptState='" + acceptState + '\'' +
                 ", rejectState='" + rejectState + '\'' +
                 ", tape='" + tape + '\'' +
+                ", scheduled=" + scheduled +
+                ", running=" + running +
                 ", done=" + done +
                 '}';
     }
