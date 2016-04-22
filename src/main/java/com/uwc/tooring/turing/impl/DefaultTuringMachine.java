@@ -17,6 +17,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTuringMachine.class);
 
+    private String id = "";
+
     private Set<String> stateSpace = new HashSet<>();
     private Set<Transition> transitionSpace = new HashSet<>();
     private String startState = "";
@@ -85,6 +87,15 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
         scheduled = false;
         running = false;
         done = true;
+    }
+
+    /**
+     * Gets ID of submitter.
+     *
+     * @return ID of submitter
+     */
+    public String getId() {
+        return id;
     }
 
     /**
@@ -250,7 +261,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     /**
      * Schedules machine for execution.
      */
-    public void schedule() {
+    public void schedule(String id) {
+        this.id = id;
         this.scheduled = true;
     }
 
