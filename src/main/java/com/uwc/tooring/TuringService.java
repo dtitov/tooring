@@ -128,7 +128,7 @@ public class TuringService {
             Optional<Map.Entry<String, DefaultTuringMachine>> turingMachineToProcess = getTuringMachineToProcess();
             turingMachineToProcess.ifPresent(turingMachine -> processTuringMachine(id, turingMachine));
             try {
-                Thread.sleep(BigInteger.TEN.longValue());
+                Thread.sleep(BigInteger.TEN.longValue()); // sleep a bit between attempts
             } catch (InterruptedException e) {
                 LOGGER.error(e.getMessage(), e);
             }

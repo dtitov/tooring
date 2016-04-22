@@ -94,15 +94,6 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     }
 
     /**
-     * Gets ID of submitter.
-     *
-     * @return ID of submitter
-     */
-    public String getId() {
-        return id;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -179,6 +170,15 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
             transitionSpace.add(newTransition);
             return true;
         }
+    }
+
+    /**
+     * Gets ID of submitter.
+     *
+     * @return ID of submitter
+     */
+    public String getId() {
+        return id;
     }
 
     /**
