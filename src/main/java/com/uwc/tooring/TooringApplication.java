@@ -155,6 +155,11 @@ public class TooringApplication implements CommandLineRunner {
         while (true) {
             Optional<Map.Entry<String, DefaultTuringMachine>> turingMachineToProcess = getTuringMachineToProcess();
             turingMachineToProcess.ifPresent(turingMachine -> processTuringMachine(id, turingMachine));
+            try {
+                Thread.sleep(BigInteger.TEN.longValue());
+            } catch (InterruptedException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
         }
     }
 
