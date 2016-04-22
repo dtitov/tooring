@@ -65,6 +65,11 @@ public class TooringApplication implements CommandLineRunner {
         }
     }
 
+    /**
+     * Creates command line options for parsing console input.
+     *
+     * @return Command line options
+     */
     private Options createCommandLineOptions() {
         Options options = new Options();
 

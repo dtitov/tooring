@@ -30,17 +30,23 @@ public class TuringService {
 
     private static final String TASKS_MAP = "TASKS_MAP";
 
+    public static final String SCHEDULED = "scheduled";
+    public static final String RUNNING = "running";
+    public static final String DONE = "done";
+
     @Autowired
     private HazelcastInstance hazelcastInstance;
 
-    public void processInput(String fileName) {
+    /**
+     * Processes input JSON file with Turing machine description.
+     *
+     * @param fileName Input file name
+     * @throws IOException If file can't be located
+     */
+    public void processInput(String fileName) throws IOException {
         String json;
-        try {
-            json = FileUtils.readFileToString(new File(fileName));
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-            return;
-        }
+        json = FileUtils.readFileToString(new File(fileName));
+
         Gson gson = new Gson();
         DefaultTuringMachine inputTuringMachine = gson.fromJson(json, DefaultTuringMachine.class);
         String key = Long.toString(hazelcastInstance.getIdGenerator(TooringApplication.class.getSimpleName()).newId());
@@ -50,6 +56,13 @@ public class TuringService {
         System.out.println("Submitted task will expire in a number of hours: " + TASK_TTL_IN_HOURS);
     }
 
+    /**
+     * Saves output to file.
+     *
+     * @param key      Key of Turing machine
+     * @param fileName File name to save output to
+     * @throws IOException If file can't be created
+     */
     public void processOutput(String key, String fileName) throws IOException {
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
         if (!tasksMap.containsKey(key)) {
@@ -62,6 +75,12 @@ public class TuringService {
         FileUtils.writeStringToFile(new File(fileName), json);
     }
 
+    /**
+     * Schedules processing of Turing machine.
+     *
+     * @param id  User ID (for counting score)
+     * @param key The key of Turing machine submitted previously
+     */
     public void scheduleExecution(String id, String key) {
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
         boolean lockAcquired;
@@ -99,6 +118,11 @@ public class TuringService {
         }
     }
 
+    /**
+     * Becomes a worker application.
+     *
+     * @param id User ID (for counting score)
+     */
     public void startAsWorker(String id) {
         while (true) {
             Optional<Map.Entry<String, DefaultTuringMachine>> turingMachineToProcess = getTuringMachineToProcess();
@@ -111,11 +135,16 @@ public class TuringService {
         }
     }
 
+    /**
+     * Finds next Turing machine waiting for being processed.
+     *
+     * @return Next Turing machine to process (with it's key)
+     */
     private Optional<Map.Entry<String, DefaultTuringMachine>> getTuringMachineToProcess() {
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
 
         EntryObject value = new PredicateBuilder().getEntryObject();
-        Predicate predicate = value.is("scheduled").and(value.isNot("running")).and(value.isNot("done"));
+        Predicate predicate = value.is(SCHEDULED).and(value.isNot(RUNNING)).and(value.isNot(DONE));
         Set<Map.Entry<String, DefaultTuringMachine>> entries = tasksMap.entrySet(predicate);
 
         return entries.stream().max((left, right) -> {
@@ -127,6 +156,12 @@ public class TuringService {
         });
     }
 
+    /**
+     * Performs computations on the Turing machine.
+     *
+     * @param id                 User ID (for counting score)
+     * @param turingMachineEntry Turing machine to compute
+     */
     private void processTuringMachine(String id, Map.Entry<String, DefaultTuringMachine> turingMachineEntry) {
         String key = turingMachineEntry.getKey();
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
@@ -147,14 +182,29 @@ public class TuringService {
         }
     }
 
+    /**
+     * Increments user's score
+     *
+     * @param id User ID
+     */
     private void incrementScore(String id) {
         hazelcastInstance.getAtomicLong(id).incrementAndGet();
     }
 
+    /**
+     * Decrements user's score
+     *
+     * @param id User ID
+     */
     private void decrementScore(String id) {
         hazelcastInstance.getAtomicLong(id).decrementAndGet();
     }
 
+    /**
+     * Gets user's score
+     *
+     * @param id User ID
+     */
     private long getScore(String id) {
         return hazelcastInstance.getAtomicLong(id).get();
     }
