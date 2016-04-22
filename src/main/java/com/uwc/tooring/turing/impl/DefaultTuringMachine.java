@@ -36,57 +36,61 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     public void run(boolean quite) {
         running = true;
 
-        String currentState = startState;
-        int currentSymbol = 0;
+        try {
+            String currentState = startState;
+            int currentSymbol = 0;
 
-        while (!currentState.equals(acceptState) && !currentState.equals(rejectState)) {
-            boolean foundTransition = false;
-            Transition currentTransition = null;
+            while (!currentState.equals(acceptState) && !currentState.equals(rejectState)) {
+                boolean foundTransition = false;
+                Transition currentTransition = null;
 
-            if (!quite) {
-                if (currentSymbol > 0) {
-                    LOGGER.info(tape.substring(0, currentSymbol) + " " + currentState + " " + tape.substring(currentSymbol));
+                if (!quite) {
+                    if (currentSymbol > 0) {
+                        LOGGER.info(tape.substring(0, currentSymbol) + " " + currentState + " " + tape.substring(currentSymbol));
+                    } else {
+                        LOGGER.info(" " + currentState + " " + tape.substring(currentSymbol));
+                    }
+                }
+
+                Iterator<Transition> transitionsIterator = transitionSpace.iterator();
+                while (transitionsIterator.hasNext() && !foundTransition) {
+                    Transition nextTransition = transitionsIterator.next();
+                    if (nextTransition.getReadState().equals(currentState) && nextTransition.getReadSymbol() == tape.charAt(currentSymbol)) {
+                        foundTransition = true;
+                        currentTransition = nextTransition;
+                    }
+                }
+
+                if (!foundTransition) {
+                    LOGGER.error("There is no valid transition for this phase! (state=" + currentState + ", symbol=" + tape.charAt(currentSymbol) + ")");
+                    return;
                 } else {
-                    LOGGER.info(" " + currentState + " " + tape.substring(currentSymbol));
+                    currentState = currentTransition.getWriteState();
+                    char[] tempTape = tape.toCharArray();
+                    tempTape[currentSymbol] = currentTransition.getWriteSymbol();
+                    tape = new String(tempTape);
+                    if (currentTransition.isMoveDirection()) {
+                        currentSymbol++;
+                    } else {
+                        currentSymbol--;
+                    }
+
+                    if (currentSymbol < 0) {
+                        currentSymbol = 0;
+                    }
+
+                    while (tape.length() <= currentSymbol) {
+                        tape = tape.concat("_");
+                    }
                 }
             }
-
-            Iterator<Transition> transitionsIterator = transitionSpace.iterator();
-            while (transitionsIterator.hasNext() && !foundTransition) {
-                Transition nextTransition = transitionsIterator.next();
-                if (nextTransition.getReadState().equals(currentState) && nextTransition.getReadSymbol() == tape.charAt(currentSymbol)) {
-                    foundTransition = true;
-                    currentTransition = nextTransition;
-                }
-            }
-
-            if (!foundTransition) {
-                LOGGER.error("There is no valid transition for this phase! (state=" + currentState + ", symbol=" + tape.charAt(currentSymbol) + ")");
-                return;
-            } else {
-                currentState = currentTransition.getWriteState();
-                char[] tempTape = tape.toCharArray();
-                tempTape[currentSymbol] = currentTransition.getWriteSymbol();
-                tape = new String(tempTape);
-                if (currentTransition.isMoveDirection()) {
-                    currentSymbol++;
-                } else {
-                    currentSymbol--;
-                }
-
-                if (currentSymbol < 0) {
-                    currentSymbol = 0;
-                }
-
-                while (tape.length() <= currentSymbol) {
-                    tape = tape.concat("_");
-                }
-            }
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+        } finally {
+            scheduled = false;
+            running = false;
+            done = true;
         }
-
-        scheduled = false;
-        running = false;
-        done = true;
     }
 
     /**
