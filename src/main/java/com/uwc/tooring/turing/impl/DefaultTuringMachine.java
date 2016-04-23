@@ -64,8 +64,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
                 }
 
                 if (!foundTransition) {
-                    LOGGER.error("There is no valid transition for this phase! (state=" + currentState + ", symbol=" + tape.charAt(currentSymbol) + ")");
-                    return;
+                    throw new IllegalStateException("There is no valid transition for this phase! (state=" + currentState + ", symbol=" + tape.charAt(currentSymbol) + ")");
                 } else {
                     currentState = currentTransition.getWriteState();
                     char[] tempTape = tape.toCharArray();
