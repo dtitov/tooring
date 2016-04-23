@@ -2,6 +2,7 @@ package com.uwc.tooring;
 
 import com.google.gson.Gson;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -31,7 +32,7 @@ public class TuringService {
     private static final String TASKS_MAP = "TASKS_MAP";
 
     public static final String SCHEDULED = "scheduled";
-    public static final String RUNNING = "running";
+    public static final String LOCKED = "locked";
     public static final String DONE = "done";
 
     @Autowired
@@ -82,11 +83,12 @@ public class TuringService {
      * @param key The key of Turing machine submitted previously
      */
     public void scheduleExecution(String id, String key) {
-        IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
+        ILock lock = hazelcastInstance.getLock(key);
         boolean lockAcquired;
         try {
-            lockAcquired = tasksMap.tryLock(key, BigInteger.ONE.longValue(), TimeUnit.NANOSECONDS, BigInteger.TEN.longValue(), TimeUnit.SECONDS);
+            lockAcquired = lock.tryLock();
             if (lockAcquired) {
+                IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
                 if (turingMachine == null) {
                     System.out.println("There's no Turing machine with specified key.");
@@ -96,25 +98,19 @@ public class TuringService {
                     System.out.println("Computation is already scheduled for the Turing machine with specified key.");
                     return;
                 }
-                if (turingMachine.isRunning()) {
-                    System.out.println("Computation is already running for the Turing machine with specified key.");
-                    return;
-                }
                 if (turingMachine.isDone()) {
                     System.out.println("Computation is already done for the Turing machine with specified key.");
                     return;
                 }
-                turingMachine.schedule(id);
+                turingMachine.schedule(id, lock);
                 tasksMap.put(key, turingMachine);
                 decrementScore(id);
                 System.out.println("Computation is scheduled for the Turing machine with specified key.");
             } else {
                 System.out.println("Can't schedule Turing machine with specified key, because it's locked by some operation. Try again a bit later.");
             }
-        } catch (InterruptedException e) {
-            LOGGER.error(e.getMessage(), e);
         } finally {
-            tasksMap.unlock(key);
+            lock.unlock();
         }
     }
 
@@ -144,7 +140,7 @@ public class TuringService {
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
 
         EntryObject value = new PredicateBuilder().getEntryObject();
-        Predicate predicate = value.is(SCHEDULED).and(value.isNot(RUNNING)).and(value.isNot(DONE));
+        Predicate predicate = value.is(SCHEDULED).and(value.isNot(LOCKED)).and(value.isNot(DONE));
         Set<Map.Entry<String, DefaultTuringMachine>> entries = tasksMap.entrySet(predicate);
 
         return entries.stream().max((left, right) -> {
@@ -164,21 +160,20 @@ public class TuringService {
      */
     private void processTuringMachine(String id, Map.Entry<String, DefaultTuringMachine> turingMachineEntry) {
         String key = turingMachineEntry.getKey();
-        IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
+        ILock lock = hazelcastInstance.getLock(key);
         boolean lockAcquired;
         try {
-            lockAcquired = tasksMap.tryLock(key, BigInteger.ONE.longValue(), TimeUnit.SECONDS, BigInteger.TEN.longValue(), TimeUnit.SECONDS);
+            lockAcquired = lock.tryLock();
             if (lockAcquired) {
+                IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
-                turingMachine.run(true);
+                turingMachine.run(lock, true);
                 tasksMap.put(key, turingMachine);
                 incrementScore(id);
                 LOGGER.info("Turing machine was successfully computed, key = " + key);
             }
-        } catch (InterruptedException e) {
-            LOGGER.error(e.getMessage(), e);
         } finally {
-            tasksMap.unlock(key);
+            lock.unlock();
         }
     }
 

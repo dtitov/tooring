@@ -1,5 +1,6 @@
 package com.uwc.tooring.turing.impl;
 
+import com.hazelcast.core.ILock;
 import com.uwc.tooring.model.Transition;
 import com.uwc.tooring.turing.TuringMachine;
 import org.slf4j.Logger;
@@ -19,8 +20,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private String id = "";
     private boolean scheduled = false;
-    private boolean running = false;
     private boolean done = false;
+    private ILock lock;
 
     private Set<String> stateSpace = new HashSet<>();
     private Set<Transition> transitionSpace = new HashSet<>();
@@ -35,9 +36,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      * {@inheritDoc}
      */
     @Override
-    public void run(boolean quite) {
-        running = true;
-
+    public void run(ILock lock, boolean quite) {
+        this.lock = lock;
         try {
             String currentState = startState;
             int currentSymbol = 0;
@@ -89,7 +89,6 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
             LOGGER.error(e.getMessage(), e);
         } finally {
             scheduled = false;
-            running = false;
             done = true;
         }
     }
@@ -266,7 +265,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     /**
      * Schedules machine for execution.
      */
-    public void schedule(String id) {
+    public void schedule(String id, ILock lock) {
+        this.lock = lock;
         this.id = id;
         this.scheduled = true;
     }
@@ -281,21 +281,21 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     }
 
     /**
-     * Checks if computations are in progress.
-     *
-     * @return true if tape computation is in progress, false otherwise
-     */
-    public boolean isRunning() {
-        return running;
-    }
-
-    /**
      * Checks if computations are finished.
      *
      * @return true if tape computation is completed, false otherwise
      */
     public boolean isDone() {
         return done;
+    }
+
+    /**
+     * Checks if current machine is locked.
+     *
+     * @return true if current machine is locked, false otherwise
+     */
+    public boolean isLocked() {
+        return lock != null && lock.isLocked();
     }
 
     /**
@@ -311,7 +311,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
                 ", rejectState='" + rejectState + '\'' +
                 ", tape='" + tape + '\'' +
                 ", scheduled=" + scheduled +
-                ", running=" + running +
+                ", locked=" + isLocked() +
                 ", done=" + done +
                 '}';
     }
