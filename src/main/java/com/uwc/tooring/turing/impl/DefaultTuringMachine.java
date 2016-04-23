@@ -18,16 +18,18 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTuringMachine.class);
 
     private String id = "";
-
-    private Set<String> stateSpace = new HashSet<>();
-    private Set<Transition> transitionSpace = new HashSet<>();
-    private String startState = "";
-    private String acceptState = "";
-    private String rejectState = "";
-    private String tape = "";
     private boolean scheduled = false;
     private boolean running = false;
     private boolean done = false;
+
+    private Set<String> stateSpace = new HashSet<>();
+    private Set<Transition> transitionSpace = new HashSet<>();
+
+    private String startState = "";
+    private String acceptState = "";
+    private String rejectState = "";
+
+    private String tape = "";
 
     /**
      * {@inheritDoc}
