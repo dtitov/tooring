@@ -5,6 +5,7 @@ import com.uwc.tooring.model.Transition;
 import com.uwc.tooring.turing.TuringMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -32,6 +33,9 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private String tape = "";
 
+    private String currentState = "";
+    private Integer currentSymbol = null;
+
     /**
      * {@inheritDoc}
      */
@@ -39,8 +43,11 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     public void run(ILock lock, boolean quite) {
         this.lock = lock;
         try {
-            String currentState = startState;
-            int currentSymbol = 0;
+            // Init current state and sumbol in case of new computation or use last values otherwise
+            if (StringUtils.isEmpty(currentState) && currentSymbol == null) {
+                currentState = startState;
+                currentSymbol = 0;
+            }
 
             while (!currentState.equals(acceptState) && !currentState.equals(rejectState)) {
                 boolean foundTransition = false;
