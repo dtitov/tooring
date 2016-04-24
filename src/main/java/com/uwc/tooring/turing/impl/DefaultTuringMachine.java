@@ -5,6 +5,7 @@ import com.uwc.tooring.model.Transition;
 import com.uwc.tooring.turing.TuringMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
@@ -19,22 +20,22 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTuringMachine.class);
 
-    private String id = "";
-    private boolean scheduled = false;
-    private boolean done = false;
+    private String id;
+    private boolean scheduled;
+    private boolean done;
     private ILock lock;
 
     private Set<String> stateSpace = new HashSet<>();
     private Set<Transition> transitionSpace = new HashSet<>();
 
-    private String startState = "";
-    private String acceptState = "";
-    private String rejectState = "";
+    private String startState;
+    private String acceptState;
+    private String rejectState;
 
-    private String tape = "";
+    private String tape;
 
-    private String currentState = "";
-    private Integer currentSymbol = null;
+    private String currentState;
+    private Integer currentSymbol;
 
     /**
      * {@inheritDoc}
@@ -131,7 +132,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      */
     @Override
     public boolean setAcceptState(String newAcceptState) {
-        if (stateSpace.contains(newAcceptState) && !rejectState.equals(newAcceptState)) {
+        if (stateSpace.contains(newAcceptState) && !ObjectUtils.nullSafeEquals(rejectState, newAcceptState)) {
             acceptState = newAcceptState;
             return true;
         } else {
@@ -145,7 +146,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      */
     @Override
     public boolean setRejectState(String newRejectState) {
-        if (stateSpace.contains(newRejectState) && !acceptState.equals(newRejectState)) {
+        if (stateSpace.contains(newRejectState) && !ObjectUtils.nullSafeEquals(acceptState, newRejectState)) {
             rejectState = newRejectState;
             return true;
         } else {
