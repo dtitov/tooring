@@ -8,10 +8,10 @@ import java.io.Serializable;
 public class Transition implements Serializable {
 
     private final String readState;
-    private final char readSymbol;
+    private final Character readSymbol;
     private final String writeState;
-    private final char writeSymbol;
-    private final boolean moveDirection;
+    private final Character writeSymbol;
+    private final Boolean moveDirection;
 
     /**
      * Constructor accepting all required parameters for building the transition.
@@ -22,7 +22,7 @@ public class Transition implements Serializable {
      * @param writeSymbol   New symbol
      * @param moveDirection Direction to move pivot
      */
-    public Transition(String readState, char readSymbol, String writeState, char writeSymbol, boolean moveDirection) {
+    public Transition(String readState, Character readSymbol, String writeState, Character writeSymbol, Boolean moveDirection) {
         this.readState = readState;
         this.readSymbol = readSymbol;
         this.writeState = writeState;
@@ -37,7 +37,7 @@ public class Transition implements Serializable {
      * @param symbol Input symbol
      * @return true if it's conflicting condition, false otherwise
      */
-    public boolean isConflicting(String state, char symbol) {
+    public boolean isConflicting(String state, Character symbol) {
         return state.equals(readState) && symbol == readSymbol;
     }
 
@@ -55,7 +55,7 @@ public class Transition implements Serializable {
      *
      * @return Read symbol
      */
-    public char getReadSymbol() {
+    public Character getReadSymbol() {
         return readSymbol;
     }
 
@@ -73,7 +73,7 @@ public class Transition implements Serializable {
      *
      * @return Write symbol
      */
-    public char getWriteSymbol() {
+    public Character getWriteSymbol() {
         return writeSymbol;
     }
 
@@ -82,7 +82,7 @@ public class Transition implements Serializable {
      *
      * @return Movement direction
      */
-    public boolean isMoveDirection() {
+    public Boolean isMoveDirection() {
         return moveDirection;
     }
 

@@ -37,14 +37,6 @@ public interface TuringMachine {
     boolean setAcceptState(String newAcceptState);
 
     /**
-     * Sets reject state for the machine.
-     *
-     * @param newRejectState Reject state
-     * @return true if state was set, false otherwise
-     */
-    boolean setRejectState(String newRejectState);
-
-    /**
      * Adds new transition to the machine.
      *
      * @param readState     Triggering state
@@ -54,6 +46,6 @@ public interface TuringMachine {
      * @param moveDirection Direction to move pivot
      * @return true if transition was added, false otherwise
      */
-    boolean addTransition(String readState, char readSymbol, String writeState, char writeSymbol, boolean moveDirection);
+    boolean addTransition(String readState, Character readSymbol, String writeState, Character writeSymbol, Boolean moveDirection);
 
 }

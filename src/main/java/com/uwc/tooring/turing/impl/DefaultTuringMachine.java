@@ -4,7 +4,6 @@ import com.uwc.tooring.model.Transition;
 import com.uwc.tooring.turing.TuringMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import java.io.Serializable;
@@ -19,6 +18,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTuringMachine.class);
 
+    public static Character EMPTY = '_';
+
     private String id;
     private boolean scheduled;
     private boolean locked;
@@ -29,12 +30,11 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private String startState;
     private String acceptState;
-    private String rejectState;
 
     private String tape;
 
     private String currentState;
-    private Integer currentSymbol;
+    private Integer currentIndex;
 
     /**
      * {@inheritDoc}
@@ -44,54 +44,61 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
         this.locked = true;
         try {
             // Init current state and symbol in case of new computation or use last values otherwise
-            if (StringUtils.isEmpty(currentState) && currentSymbol == null) {
+            if (StringUtils.isEmpty(currentState) && currentIndex == null) {
                 currentState = startState;
-                currentSymbol = 0;
+                currentIndex = 0;
             }
 
-            while (!currentState.equals(acceptState) && !currentState.equals(rejectState)) {
+            while (!currentState.equals(acceptState)) {
                 boolean foundTransition = false;
                 Transition currentTransition = null;
 
                 if (!quite) {
-                    if (currentSymbol > 0) {
-                        LOGGER.info(tape.substring(0, currentSymbol) + " " + currentState + " " + tape.substring(currentSymbol));
+                    if (currentIndex > 0) {
+                        LOGGER.info(tape.substring(0, currentIndex) + " " + currentState + " " + tape.substring(currentIndex));
                     } else {
-                        LOGGER.info(" " + currentState + " " + tape.substring(currentSymbol));
+                        LOGGER.info(" " + currentState + " " + tape.substring(currentIndex));
                     }
                 }
 
                 Iterator<Transition> transitionsIterator = transitionSpace.iterator();
                 while (transitionsIterator.hasNext() && !foundTransition) {
                     Transition nextTransition = transitionsIterator.next();
-                    if (nextTransition.getReadState().equals(currentState) && nextTransition.getReadSymbol() == tape.charAt(currentSymbol)) {
+                    if (nextTransition.getReadState().equals(currentState) && nextTransition.getReadSymbol() == tape.charAt(currentIndex)) {
                         foundTransition = true;
                         currentTransition = nextTransition;
                     }
                 }
 
                 if (!foundTransition) {
-                    throw new IllegalStateException("There is no valid transition for this phase! (state=" + currentState + ", symbol=" + tape.charAt(currentSymbol) + ")");
+                    throw new IllegalStateException("There is no valid transition for this phase! (state=" + currentState + ", symbol=" + tape.charAt(currentIndex) + ")");
                 }
 
                 currentState = currentTransition.getWriteState();
                 char[] tempTape = tape.toCharArray();
-                tempTape[currentSymbol] = currentTransition.getWriteSymbol();
+                Character writeSymbol = currentTransition.getWriteSymbol();
+                if (writeSymbol != null) {
+                    tempTape[currentIndex] = writeSymbol;
+                }
                 tape = new String(tempTape);
-                if (currentTransition.isMoveDirection()) {
-                    currentSymbol++;
-                } else {
-                    currentSymbol--;
+                if (currentTransition.isMoveDirection() != null) {
+                    if (currentTransition.isMoveDirection()) {
+                        currentIndex++;
+                    } else {
+                        currentIndex--;
+                    }
                 }
 
-                if (currentSymbol < 0) {
-                    currentSymbol = 0;
+                if (currentIndex < 0) {
+                    tape = EMPTY + tape;
+                    currentIndex = 0;
                 }
 
-                while (tape.length() <= currentSymbol) {
+                while (tape.length() <= currentIndex) {
                     tape = tape.concat("_");
                 }
             }
+            cleanUpTape();
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
         } finally {
@@ -132,7 +139,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      */
     @Override
     public boolean setAcceptState(String newAcceptState) {
-        if (stateSpace.contains(newAcceptState) && !ObjectUtils.nullSafeEquals(rejectState, newAcceptState)) {
+        if (stateSpace.contains(newAcceptState)) {
             acceptState = newAcceptState;
             return true;
         } else {
@@ -145,22 +152,16 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      * {@inheritDoc}
      */
     @Override
-    public boolean setRejectState(String newRejectState) {
-        if (stateSpace.contains(newRejectState) && !ObjectUtils.nullSafeEquals(acceptState, newRejectState)) {
-            rejectState = newRejectState;
-            return true;
-        } else {
-            return false;
+    public boolean addTransition(String readState, Character readSymbol, String writeState, Character writeSymbol, Boolean moveDirection) {
+        if (!stateSpace.contains(readState)) {
+            if (!addState(readState)) {
+                throw new IllegalArgumentException("Can't add transition, because read state can't be added to the state space");
+            }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean addTransition(String readState, char readSymbol, String writeState, char writeSymbol, boolean moveDirection) {
-        if (!stateSpace.contains(readState) || !stateSpace.contains(writeState)) {
-            return false;
+        if (!stateSpace.contains(writeState)) {
+            if (!addState(writeState)) {
+                throw new IllegalArgumentException("Can't add transition, because write state can't be added to the state space");
+            }
         }
 
         boolean conflict = false;
@@ -178,6 +179,13 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
             transitionSpace.add(newTransition);
             return true;
         }
+    }
+
+    /**
+     * Clean opening and ending whitespaces in tape (empty symbols).
+     */
+    private void cleanUpTape() {
+        tape = tape.replace('_', ' ').trim();
     }
 
     /**
@@ -241,15 +249,6 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      */
     public String getAcceptState() {
         return acceptState;
-    }
-
-    /**
-     * Gets reject state.
-     *
-     * @return Reject state
-     */
-    public String getRejectState() {
-        return rejectState;
     }
 
     /**
@@ -324,7 +323,6 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
                 ", transitionSpace=" + transitionSpace +
                 ", startState='" + startState + '\'' +
                 ", acceptState='" + acceptState + '\'' +
-                ", rejectState='" + rejectState + '\'' +
                 ", tape='" + tape + '\'' +
                 ", scheduled=" + scheduled +
                 ", locked=" + locked +
