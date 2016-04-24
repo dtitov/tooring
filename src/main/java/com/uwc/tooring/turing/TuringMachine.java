@@ -1,7 +1,5 @@
 package com.uwc.tooring.turing;
 
-import com.hazelcast.core.ILock;
-
 /**
  * Interface representing Turing machine.
  */
@@ -10,10 +8,9 @@ public interface TuringMachine {
     /**
      * Performs computations over the tape.
      *
-     * @param lock  lock for current machine
      * @param quite true for printing logs
      */
-    void run(ILock lock, boolean quite);
+    void run(boolean quite);
 
     /**
      * Adds state to the machine.

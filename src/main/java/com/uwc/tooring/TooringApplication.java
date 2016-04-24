@@ -12,6 +12,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.math.BigInteger;
 
@@ -19,6 +20,7 @@ import java.math.BigInteger;
  * Main application class.
  */
 @SpringBootApplication
+@EnableScheduling
 public class TooringApplication implements CommandLineRunner {
 
     private static final String SET = "set";
@@ -47,7 +49,7 @@ public class TooringApplication implements CommandLineRunner {
 
         if (cmd.hasOption(SET)) {
             String fileName = cmd.getOptionValue(INPUT);
-            turingService.processInput(fileName);
+            turingService.processInputFile(fileName);
             System.exit(BigInteger.ZERO.intValue());
         } else if (cmd.hasOption(GET)) {
             String key = cmd.getOptionValue(GET);

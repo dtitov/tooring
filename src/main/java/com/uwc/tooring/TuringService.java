@@ -27,9 +27,9 @@ public class TuringService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TuringService.class);
 
-    private static final int TASK_TTL_IN_HOURS = 12;
+    public static final int TASK_TTL_IN_HOURS = 12;
 
-    private static final String TASKS_MAP = "TASKS_MAP";
+    public static final String TASKS_MAP = "TASKS_MAP";
 
     public static final String SCHEDULED = "scheduled";
     public static final String LOCKED = "locked";
@@ -38,23 +38,35 @@ public class TuringService {
     @Autowired
     private HazelcastInstance hazelcastInstance;
 
+    private volatile boolean worker;
+
     /**
      * Processes input JSON file with Turing machine description.
      *
      * @param fileName Input file name
-     * @throws IOException If file can't be located
+     * @throws IOException If file can't be accessed
      */
-    public void processInput(String fileName) throws IOException {
+    public void processInputFile(String fileName) throws IOException {
         String json;
         json = FileUtils.readFileToString(new File(fileName));
+        String key = processInputJSON(json);
+        System.out.println("Key for submitted Turing machine is: " + key);
+        System.out.println("Submitted task will expire in a number of hours: " + TASK_TTL_IN_HOURS);
+    }
 
+    /**
+     * Processes input JSON string with Turing machine description.
+     *
+     * @param json String with JSON description of Turing machine
+     * @return key for submitted Turing machine
+     */
+    public String processInputJSON(String json) {
         Gson gson = new Gson();
         DefaultTuringMachine inputTuringMachine = gson.fromJson(json, DefaultTuringMachine.class);
         String key = Long.toString(hazelcastInstance.getIdGenerator(TooringApplication.class.getSimpleName()).newId());
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
         tasksMap.putIfAbsent(key, inputTuringMachine, TASK_TTL_IN_HOURS, TimeUnit.HOURS);
-        System.out.println("Key for submitted Turing machine is: " + key);
-        System.out.println("Submitted task will expire in a number of hours: " + TASK_TTL_IN_HOURS);
+        return key;
     }
 
     /**
@@ -65,15 +77,28 @@ public class TuringService {
      * @throws IOException If file can't be created
      */
     public void processOutput(String key, String fileName) throws IOException {
+        Optional<String> output = processOutput(key);
+        if (output.isPresent()) {
+            FileUtils.writeStringToFile(new File(fileName), output.get());
+        } else {
+            System.out.println("There's no Turing machine with the specified key.");
+        }
+    }
+
+    /**
+     * Returns output as JSON String.
+     *
+     * @param key Key of Turing machine
+     * @return String with JSON representation of Turing machine
+     */
+    public Optional<String> processOutput(String key) {
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
         if (!tasksMap.containsKey(key)) {
-            System.out.println("There's no Turing machine with the specified key.");
-            return;
+            return Optional.empty();
         }
         DefaultTuringMachine turingMachine = tasksMap.get(key);
         Gson gson = new Gson();
-        String json = gson.toJson(turingMachine);
-        FileUtils.writeStringToFile(new File(fileName), json);
+        return Optional.of(gson.toJson(turingMachine));
     }
 
     /**
@@ -102,7 +127,7 @@ public class TuringService {
                     System.out.println("Computation is already done for the Turing machine with specified key.");
                     return;
                 }
-                turingMachine.schedule(id, lock);
+                turingMachine.schedule(id);
                 tasksMap.put(key, turingMachine);
                 decrementScore(id);
                 System.out.println("Computation is scheduled for the Turing machine with specified key.");
@@ -120,7 +145,8 @@ public class TuringService {
      * @param id User ID (for counting score)
      */
     public void startAsWorker(String id) {
-        while (true) {
+        setWorker(true);
+        while (isWorker()) {
             Optional<Map.Entry<String, DefaultTuringMachine>> turingMachineToProcess = getTuringMachineToProcess();
             turingMachineToProcess.ifPresent(turingMachine -> processTuringMachine(id, turingMachine));
             try {
@@ -167,7 +193,7 @@ public class TuringService {
             if (lockAcquired) {
                 IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
-                turingMachine.run(lock, true);
+                turingMachine.run(true);
                 tasksMap.put(key, turingMachine);
                 incrementScore(id);
                 LOGGER.info("Turing machine was successfully computed, key = " + key);
@@ -202,6 +228,24 @@ public class TuringService {
      */
     private long getScore(String id) {
         return hazelcastInstance.getAtomicLong(id).get();
+    }
+
+    /**
+     * Detects if current node is "worker" node
+     *
+     * @return true if current node is "worker" node, false otherwise
+     */
+    public boolean isWorker() {
+        return worker;
+    }
+
+    /**
+     * Sets worker flag.
+     *
+     * @param worker true if current node is "worker" node, false otherwise
+     */
+    public void setWorker(boolean worker) {
+        this.worker = worker;
     }
 
 }

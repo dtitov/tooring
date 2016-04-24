@@ -1,6 +1,5 @@
 package com.uwc.tooring.turing.impl;
 
-import com.hazelcast.core.ILock;
 import com.uwc.tooring.model.Transition;
 import com.uwc.tooring.turing.TuringMachine;
 import org.slf4j.Logger;
@@ -22,8 +21,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
 
     private String id;
     private boolean scheduled;
+    private boolean locked;
     private boolean done;
-    private ILock lock;
 
     private Set<String> stateSpace = new HashSet<>();
     private Set<Transition> transitionSpace = new HashSet<>();
@@ -41,8 +40,8 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      * {@inheritDoc}
      */
     @Override
-    public void run(ILock lock, boolean quite) {
-        this.lock = lock;
+    public void run(boolean quite) {
+        this.locked = true;
         try {
             // Init current state and symbol in case of new computation or use last values otherwise
             if (StringUtils.isEmpty(currentState) && currentSymbol == null) {
@@ -97,6 +96,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
             LOGGER.error(e.getMessage(), e);
         } finally {
             scheduled = false;
+            locked = false;
             done = true;
         }
     }
@@ -273,8 +273,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     /**
      * Schedules machine for execution.
      */
-    public void schedule(String id, ILock lock) {
-        this.lock = lock;
+    public void schedule(String id) {
         this.id = id;
         this.scheduled = true;
     }
@@ -303,7 +302,16 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
      * @return true if current machine is locked, false otherwise
      */
     public boolean isLocked() {
-        return lock != null && lock.isLocked();
+        return locked;
+    }
+
+    /**
+     * Sets locking state of current machine.
+     *
+     * @param locked lock-flag
+     */
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 
     /**
@@ -319,7 +327,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
                 ", rejectState='" + rejectState + '\'' +
                 ", tape='" + tape + '\'' +
                 ", scheduled=" + scheduled +
-                ", locked=" + isLocked() +
+                ", locked=" + locked +
                 ", done=" + done +
                 '}';
     }
