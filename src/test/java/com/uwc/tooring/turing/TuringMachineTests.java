@@ -18,6 +18,12 @@ public class TuringMachineTests {
      */
     public static final String TEST_TURING_MACHINE_DESCRIPTION = "{\"stateSpace\":[\"q1\",\"qa\",\"q2\",\"qr\",\"q3\",\"q4\",\"q5\",\"q6\",\"q7\",\"q8\"],\"transitionSpace\":[{\"readState\":\"q1\",\"readSymbol\":\"1\",\"writeState\":\"q3\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q6\",\"readSymbol\":\"#\",\"writeState\":\"q7\",\"writeSymbol\":\"#\",\"moveDirection\":false},{\"readState\":\"q6\",\"readSymbol\":\"x\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q4\",\"readSymbol\":\"x\",\"writeState\":\"q4\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q4\",\"readSymbol\":\"0\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q5\",\"readSymbol\":\"1\",\"writeState\":\"q6\",\"writeSymbol\":\"x\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"#\",\"writeState\":\"q4\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q5\",\"readSymbol\":\"x\",\"writeState\":\"q5\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q1\",\"readSymbol\":\"0\",\"writeState\":\"q2\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q6\",\"readSymbol\":\"0\",\"writeState\":\"q6\",\"writeSymbol\":\"0\",\"moveDirection\":false},{\"readState\":\"q6\",\"readSymbol\":\"1\",\"writeState\":\"q6\",\"writeSymbol\":\"1\",\"moveDirection\":false},{\"readState\":\"q7\",\"readSymbol\":\"1\",\"writeState\":\"q7\",\"writeSymbol\":\"1\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"0\",\"writeState\":\"q2\",\"writeSymbol\":\"0\",\"moveDirection\":true},{\"readState\":\"q7\",\"readSymbol\":\"x\",\"writeState\":\"q1\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"0\",\"writeState\":\"q3\",\"writeSymbol\":\"0\",\"moveDirection\":true},{\"readState\":\"q8\",\"readSymbol\":\"_\",\"writeState\":\"qa\",\"writeSymbol\":\"_\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"#\",\"writeState\":\"q5\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q8\",\"readSymbol\":\"x\",\"writeState\":\"q8\",\"writeSymbol\":\"x\",\"moveDirection\":true},{\"readState\":\"q3\",\"readSymbol\":\"1\",\"writeState\":\"q3\",\"writeSymbol\":\"1\",\"moveDirection\":true},{\"readState\":\"q1\",\"readSymbol\":\"#\",\"writeState\":\"q8\",\"writeSymbol\":\"#\",\"moveDirection\":true},{\"readState\":\"q7\",\"readSymbol\":\"0\",\"writeState\":\"q7\",\"writeSymbol\":\"0\",\"moveDirection\":false},{\"readState\":\"q2\",\"readSymbol\":\"1\",\"writeState\":\"q2\",\"writeSymbol\":\"1\",\"moveDirection\":true}],\"startState\":\"q1\",\"acceptState\":\"qa\",\"tape\":\"010000110101#010000110101\",\"done\":false}";
 
+    /**
+     * Defines size of the array to sort.
+     * Be careful: with value 100 it takes ~30 minutes to sort the array.
+     */
+    public static final int MULTIPLIER = 1;
+
     private Gson gson = new Gson();
 
     /**
@@ -159,7 +165,7 @@ public class TuringMachineTests {
 
         Random random = new Random();
         String tape = "";
-        for (int i = 0; i < Byte.MAX_VALUE * 100; i++) {
+        for (int i = 0; i < Byte.MAX_VALUE * MULTIPLIER; i++) {
             tape += random.nextBoolean() ? "a" : "b";
         }
         bubbleSort.setTape(tape);
