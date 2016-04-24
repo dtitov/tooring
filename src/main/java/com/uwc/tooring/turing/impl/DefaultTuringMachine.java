@@ -43,7 +43,7 @@ public class DefaultTuringMachine implements TuringMachine, Serializable {
     public void run(ILock lock, boolean quite) {
         this.lock = lock;
         try {
-            // Init current state and sumbol in case of new computation or use last values otherwise
+            // Init current state and symbol in case of new computation or use last values otherwise
             if (StringUtils.isEmpty(currentState) && currentSymbol == null) {
                 currentState = startState;
                 currentSymbol = 0;
