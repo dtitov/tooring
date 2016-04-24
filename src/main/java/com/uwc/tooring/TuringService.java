@@ -7,6 +7,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.util.UuidUtil;
 import com.uwc.tooring.turing.impl.DefaultTuringMachine;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +34,8 @@ public class TuringService {
     public static final String SCHEDULED = "scheduled";
     public static final String LOCKED = "locked";
     public static final String DONE = "done";
+
+    public static final long WORKER_RATE = 1000L;
 
     @Autowired
     private HazelcastInstance hazelcastInstance;
@@ -63,7 +65,7 @@ public class TuringService {
     public String processInputJSON(String json) {
         Gson gson = new Gson();
         DefaultTuringMachine inputTuringMachine = gson.fromJson(json, DefaultTuringMachine.class);
-        String key = Long.toString(hazelcastInstance.getIdGenerator(TooringApplication.class.getSimpleName()).newId());
+        String key = UuidUtil.newSecureUuidString();
         IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
         tasksMap.putIfAbsent(key, inputTuringMachine, TASK_TTL_IN_HOURS, TimeUnit.HOURS);
         return key;
@@ -81,7 +83,7 @@ public class TuringService {
         if (output.isPresent()) {
             FileUtils.writeStringToFile(new File(fileName), output.get());
         } else {
-            System.out.println("There's no Turing machine with the specified key.");
+            System.out.println("There's no Turing machine with the specified key or it's not ready yet.");
         }
     }
 
@@ -97,6 +99,10 @@ public class TuringService {
             return Optional.empty();
         }
         DefaultTuringMachine turingMachine = tasksMap.get(key);
+        if (!turingMachine.isDone()) {
+            return Optional.empty();
+        }
+        tasksMap.remove(key);
         Gson gson = new Gson();
         return Optional.of(gson.toJson(turingMachine));
     }
@@ -109,10 +115,8 @@ public class TuringService {
      */
     public void scheduleExecution(String id, String key) {
         ILock lock = hazelcastInstance.getLock(key);
-        boolean lockAcquired;
-        try {
-            lockAcquired = lock.tryLock();
-            if (lockAcquired) {
+        if (lock.tryLock()) {
+            try {
                 IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
                 if (turingMachine == null) {
@@ -131,11 +135,11 @@ public class TuringService {
                 tasksMap.put(key, turingMachine);
                 decrementScore(id);
                 System.out.println("Computation is scheduled for the Turing machine with specified key.");
-            } else {
-                System.out.println("Can't schedule Turing machine with specified key, because it's locked by some operation. Try again a bit later.");
+            } finally {
+                lock.unlock();
             }
-        } finally {
-            lock.unlock();
+        } else {
+            System.out.println("Can't schedule Turing machine with specified key, because it's locked by some operation. Try again a bit later.");
         }
     }
 
@@ -150,7 +154,7 @@ public class TuringService {
             Optional<Map.Entry<String, DefaultTuringMachine>> turingMachineToProcess = getTuringMachineToProcess();
             turingMachineToProcess.ifPresent(turingMachine -> processTuringMachine(id, turingMachine));
             try {
-                Thread.sleep(BigInteger.TEN.longValue()); // sleep a bit between attempts
+                Thread.sleep(WORKER_RATE); // sleep a bit between attempts
             } catch (InterruptedException e) {
                 LOGGER.error(e.getMessage(), e);
             }
@@ -187,19 +191,17 @@ public class TuringService {
     private void processTuringMachine(String id, Map.Entry<String, DefaultTuringMachine> turingMachineEntry) {
         String key = turingMachineEntry.getKey();
         ILock lock = hazelcastInstance.getLock(key);
-        boolean lockAcquired;
-        try {
-            lockAcquired = lock.tryLock();
-            if (lockAcquired) {
+        if (lock.tryLock()) {
+            try {
                 IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
                 turingMachine.run(true);
                 tasksMap.put(key, turingMachine);
                 incrementScore(id);
                 LOGGER.info("Turing machine was successfully computed, key = " + key);
+            } finally {
+                lock.unlock();
             }
-        } finally {
-            lock.unlock();
         }
     }
 
