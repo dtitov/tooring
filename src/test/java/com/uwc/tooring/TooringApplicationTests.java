@@ -2,7 +2,7 @@ package com.uwc.tooring;
 
 import com.google.gson.Gson;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.uwc.tooring.turing.TuringMachineTests;
 import com.uwc.tooring.turing.impl.DefaultTuringMachine;
 import org.junit.Assert;
@@ -42,7 +42,7 @@ public class TooringApplicationTests {
     @Test
     public void testTuringService() {
         String key = turingService.processInputJSON(TuringMachineTests.TEST_TURING_MACHINE_DESCRIPTION);
-        IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TuringService.TASKS_MAP);
+        ReplicatedMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getReplicatedMap(TuringService.TASKS_MAP);
         Assert.assertFalse(CollectionUtils.isEmpty(tasksMap.entrySet()));
         Map.Entry<String, DefaultTuringMachine> turingMachineEntry = tasksMap.entrySet().iterator().next();
         Assert.assertEquals(key, turingMachineEntry.getKey());

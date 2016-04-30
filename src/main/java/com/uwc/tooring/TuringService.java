@@ -3,10 +3,7 @@ package com.uwc.tooring;
 import com.google.gson.Gson;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.util.UuidUtil;
 import com.uwc.tooring.turing.impl.DefaultTuringMachine;
 import org.apache.commons.io.FileUtils;
@@ -30,10 +27,6 @@ public class TuringService {
     public static final int TASK_TTL_IN_HOURS = 12;
 
     public static final String TASKS_MAP = "TASKS_MAP";
-
-    public static final String SCHEDULED = "scheduled";
-    public static final String LOCKED = "locked";
-    public static final String DONE = "done";
 
     public static final long WORKER_RATE = 1000L;
 
@@ -66,8 +59,8 @@ public class TuringService {
         Gson gson = new Gson();
         DefaultTuringMachine inputTuringMachine = gson.fromJson(json, DefaultTuringMachine.class);
         String key = UuidUtil.newSecureUuidString();
-        IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
-        tasksMap.putIfAbsent(key, inputTuringMachine, TASK_TTL_IN_HOURS, TimeUnit.HOURS);
+        ReplicatedMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getReplicatedMap(TASKS_MAP);
+        tasksMap.put(key, inputTuringMachine, TASK_TTL_IN_HOURS, TimeUnit.HOURS);
         return key;
     }
 
@@ -94,7 +87,7 @@ public class TuringService {
      * @return String with JSON representation of Turing machine
      */
     public Optional<String> processOutput(String key) {
-        IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
+        ReplicatedMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getReplicatedMap(TASKS_MAP);
         if (!tasksMap.containsKey(key)) {
             return Optional.empty();
         }
@@ -117,7 +110,7 @@ public class TuringService {
         ILock lock = hazelcastInstance.getLock(key);
         if (lock.tryLock()) {
             try {
-                IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
+                ReplicatedMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getReplicatedMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
                 if (turingMachine == null) {
                     System.out.println("There's no Turing machine with specified key.");
@@ -136,7 +129,7 @@ public class TuringService {
                 decrementScore(id);
                 System.out.println("Computation is scheduled for the Turing machine with specified key.");
             } finally {
-                lock.unlock();
+                lock.forceUnlock();
             }
         } else {
             System.out.println("Can't schedule Turing machine with specified key, because it's locked by some operation. Try again a bit later.");
@@ -167,13 +160,13 @@ public class TuringService {
      * @return Next Turing machine to process (with it's key)
      */
     private Optional<Map.Entry<String, DefaultTuringMachine>> getTuringMachineToProcess() {
-        IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
+        ReplicatedMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getReplicatedMap(TASKS_MAP);
+        Set<Map.Entry<String, DefaultTuringMachine>> entries = tasksMap.entrySet();
 
-        EntryObject value = new PredicateBuilder().getEntryObject();
-        Predicate predicate = value.is(SCHEDULED).and(value.isNot(LOCKED)).and(value.isNot(DONE));
-        Set<Map.Entry<String, DefaultTuringMachine>> entries = tasksMap.entrySet(predicate);
-
-        return entries.stream().max((left, right) -> {
+        return entries.stream().filter(e -> {
+            DefaultTuringMachine machine = e.getValue();
+            return machine.isScheduled() && !machine.isLocked() && !machine.isDone();
+        }).max((left, right) -> {
             DefaultTuringMachine leftValue = left.getValue();
             DefaultTuringMachine rightValue = right.getValue();
             long x = getScore(leftValue.getId());
@@ -193,14 +186,14 @@ public class TuringService {
         ILock lock = hazelcastInstance.getLock(key);
         if (lock.tryLock()) {
             try {
-                IMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getMap(TASKS_MAP);
+                ReplicatedMap<String, DefaultTuringMachine> tasksMap = hazelcastInstance.getReplicatedMap(TASKS_MAP);
                 DefaultTuringMachine turingMachine = tasksMap.get(key);
                 turingMachine.run(true);
                 tasksMap.put(key, turingMachine);
                 incrementScore(id);
                 LOGGER.info("Turing machine was successfully computed, key = " + key);
             } finally {
-                lock.unlock();
+                lock.forceUnlock();
             }
         }
     }
