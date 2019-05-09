@@ -1,21 +1,21 @@
 # tooring
 Distributed Turing machine
 
-##Requirenments
+## Requirenments
 * Java 8
 * Maven 3
 
-##Running
+## Running
 First you have to build the application: `mvn clean package`
 
 The output is `tooring-0.0.1-SNAPSHOT.jar` file located at the `target` folder.
 
 This archive can be executed in two modes: submitter or worker.
 
-###Worker
+### Worker
 To start app as a worker, use command: `java -jar tooring-0.0.1-SNAPSHOT.jar --worker ID` (where ID is the identifier of the worker).
 
-###Submitter
+### Submitter
 To submit new Turing machine to the cluster, place it's JSON-formatted description to the directory with the JAR-file (example file is "bubbleSort").
 
 Then execute command `java -jar tooring-0.0.1-SNAPSHOT.jar --set --input FILENAME` (where filename is your input-file name, e.g. "bubbleSort").
@@ -26,7 +26,7 @@ With the key obtained, you can schedule the Turing machine to be computed. It ca
 
 Then you can try to get a result using command `java -jar tooring-0.0.1-SNAPSHOT.jar --get KEY --output FILENAME` (where KEY is the task key and FILENAME is the name of the file to store the result to).
 
-##Architecture and ideology
+## Architecture and ideology
 The developed application uses Hazelcast Framework under the hood (http://hazelcast.org/).
 
 One of the core features of the Hazelcast is the possibility to create dynamically-scaled and fault-tolerant computing cluster.
@@ -42,7 +42,7 @@ Finally, if the cluster has enough quantity of workers, user gets his results in
 
 Also `tooring` application has scoring system: the more tasks you compute as a worker, the higher priority of your own computations you'll have in the system.
 
-##Testing
+## Testing
 Application has unit- and integration-tests. One of them is "bubbleSort" test which can be used for performance measurements (com.uwc.tooring.turing.TuringMachineTests.testBubbleSort). It contains Bubble Sort algorithm description and it fills the Turing machine tape with sample data.
 By changing the `MULTIPLIER` constant you can scale up or down the size of the array to sort. Then you can serialize the prepared Turing machine and save it to text file for further usage.
 Sample generated file is located at the root directory of the project.
